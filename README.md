@@ -2,6 +2,8 @@
 
 [![License](https://img.shields.io/badge/license-BSD-blue.svg)](LICENSE)
 
+[中文](./README.md) [English](./README_en.md)
+
 ## 1. 简介
 `SeetaFace2` 人脸识别引擎包括了搭建一套全自动人脸识别系统所需的三个核心模块，即：人脸检测模块 `FaceDetector`、面部关键点定位模块 `FaceLandmarker` 以及人脸特征提取与比对模块 `FaceRecognizer`。还将陆续开源人脸跟踪、闭眼检测等辅助模块。
 
@@ -77,26 +79,100 @@ SeetaFace2 是面向于人脸识别商业落地的里程碑版本，其中人脸
 
 ## 2. 编译
 ### 2.1 编译依赖
-- GNU Make 工具<br>
-- GCC 或者 Clang 编译器<br>
-- CMake<br>
++ 编译工具
+  + For linux
+    - GNU Make 工具
+    - GCC 或者 Clang 编译器
+  + For windows
+    - [MSVC](http://msdn.microsoft.com/zh-cn/vstudio) 或者 MinGW. 
+  - [CMake](http://www.cmake.org/)
++ 依赖库
+  - [可选] [OpneCV](http://opencv.org/) 仅编译例子时需要
++ 依赖架构
+  - CPU 支持 SSE2 和 FMA [可选]（x86）或 NENO（ARM）支持
 
 ### 2.2 linux和windows平台编译说明
-linux 和 windows 上的 SDK 编译脚本见目录 `craft`，其中 `craft/linux` 下为 linux 版本的编译脚本，`craft/windows` 下为 windows 版本的编译脚本，默认编译的库为64位 Release 版本。
+1. 编译参数
+  - PLATFORM: [STRING] 编译目标架构，x86/x86_64/amd64 不需要设置，ARM 架构需要设置为对应平台
+  - BUILD_DETECOTOR: 是否编译人脸检测模块。ON：打开；OFF：关闭
+  - BUILD_LANDMARKER: 是否编译面部关键点定位模块。ON：打开；OFF：关闭
+  - BUILD_RECOGNIZER: 是否编译人脸特征提取与比对模块。ON：打开；OFF：关闭
+  - BUILD_EXAMPLE: 是否编译例子。ON：打开；OFF：关闭，打开需要预先安装 `OpneCV`
+  - CMAKE_INSTALL_PREFIX: 安装前缀
+  - SEETA_USE_FMA: 是否启用 `FMA` 指令。默认关闭。只有目标是`x86`架构是起作用
 
-linux 和 windows上的SDK编译方法：
-1. 打开终端（windows上为VS2015 x64 Native Tools Command Prompt 工具，linux 上为bash），`cd` 到编译脚本所在目录；<br>
-2. 执行对应平台的编译脚本。<br>
+2. linux
+  - 依赖
+    + opencv。仅编译例子时需要
 
-linux 上 example 的编译运行方法：
-1. `cd` 到 `example/search` 目录下，执行 `make` 指令；
-2. 拷贝模型文件到程序指定的目录下；
-3. 执行脚本 `run.sh`。
+        sudo apt-get install libopencv-dev 
 
-windows 上 example 的编译运行方法：
-1. 使用 vs2015 打开 `SeetaExample.sln` 构建工程，修改 `Opencv3.props` 属性表中变量 `OpenCV3Home` 的值为本机上的 OpenCV3 的安装目录；
-2. 执行 vs2015 中的编译命令；
-3. 拷贝模型文件到程序指定的目录下，运行程序。
+  - 编译
+
+        cd SeetaFace2
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_INSTALL_PREFIX=`pwd`/install -DBUILD_EXAMPLE=OFF # 如果有 OpneCV，则设置为 ON
+        cmake --build .
+
+    + ARM 架构编译需要制定平台
+        ```
+        cmake .. -DCMAKE_INSTALL_PREFIX=`pwd`/install -DPLATFORM=arm
+        cmake --build .
+        ```
+  - 安装
+
+        cmake --build . --target install
+
+  - 运行例子
+    + 把生成库的目录加入到变量 LD_LIBRARY_PATH 中
+ 
+            export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`pwd`/lib
+
+    + 拷贝模型文件到程序执行目录的 model 目录下
+
+            cd SeetaFace2
+            cd build
+            cd bin
+            mkdir model
+            cp fd_2_00.dat pd_2_00_pts5.dat pd_2_00_pts81.dat .
+
+    + 执行 bin 目录下的程序
+      - points81
+      - search
+
+3. windows
+  - 依赖
+    + opencv。仅编译例子时需要
+  - 使用 cmake-gui.exe 工具编译。打开 cmake-gui.exe
+  - 命令行编译
+    + 把 cmake 命令所在目录加入到环境变量 PATH 中
+    + 从开始菜单打开 “VS2015开发人员命令提示”，进入命令行
+
+      - 编译
+
+            cd SeetaFace2
+            mkdir build
+            cd build
+            cmake .. -DCMAKE_INSTALL_PREFIX=install -DBUILD_EXAMPLE=OFF # 如果有 OpneCV，则设置为 ON
+            cmake --build .
+
+      - 安装
+
+            cmake --build . --target install
+
+      - 运行例子
+        + 拷贝模型文件到程序执行目录的 model 目录下
+
+                cd SeetaFace2
+                cd build
+                cd bin
+                mkdir model
+                cp fd_2_00.dat pd_2_00_pts5.dat pd_2_00_pts81.dat .
+
+        + 执行 bin 目录下的程序
+          - points81
+          - search
 
 ### 2.3 Android平台编译说明
 Android 版本的编译方法： 
@@ -105,6 +181,33 @@ Android 版本的编译方法：
 2. `cd` 到各模块的 `jni` 目录下（如SeetaNet 的 Android 编译脚本位置为`SeetaNet/sources/jni`， FaceDetector 的 Android 编译脚本位置为`FaceDetector/FaceDetector/jni`），执行 `ndk-build -j8` 命令进行编译。<br>
 
 编译依赖说明：人脸检测模块 `FaceDetector` ， 面部关键点定位模块 `FaceLandmarker` 以及人脸特征提取与比对模块 `FaceRecognizer` 均依赖前向计算框架 `SeetaNet` 模块，因此需优先编译前向计算框架 `SeetaNet` 模块。
+
+
+### 2.4 IOS 平台编译说明
+> 以实体机为例
+
++ 环境准备
+  - 需要 MacOS 的 PC。
+  - git 下载源代码。
+
++ 命令行编译
+  + 使用 cmake 编译并安装项目，
+    ```
+    cd SeetaFace2
+    mkdir build
+    cd build
+    chmod +x ../ios/cmake.sh
+    ../ios/cmake.sh -DCMAKE_INSTALL_PREFIX=`pwd`/install
+    make -j4
+    make install
+    ```
+
+    执行完毕后，生成好的静态库将安装到`SeetaFace2/build/install`
+
+  + 编译模拟器版本
+    修改 cmake 指令参数 `../ios/cmake.sh -DIOS_PLATFORM=SIMULATOR64 -DPLATFORM=x64`
+
+  + 查看 `<root>/ios/cmake.sh` 和 `<root>/ios/iOS.cmake` 获取更多编译选项
 
 ## 3. 目录结构
 |-- SeetaFace2<br>
@@ -146,6 +249,9 @@ Dropbox : https://www.dropbox.com/s/6aslqcokpljha5j/fr_2_10.dat?dl=0
 欢迎开发者加入 SeetaFace 开发者社区，请先加 SeetaFace 小助手微信，经过审核后邀请入群。
 
 ![QR](./asserts/QR.png)
+
+## 6.1 代码贡献
+欢迎开发者贡献优质代码，所有开发者代码需提交在`develop`分支。
 
 ## 7. 商业合作
 想要购买 `SeetaFace` 商业版引擎以获得精度更高、速度更快的人脸识别算法或活体验证、表情识别、心率估计、姿态估计、视线追踪等更多人脸分析模块支持，请联系商务邮件 bd@seetatech.com。
